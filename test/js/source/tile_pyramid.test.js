@@ -248,7 +248,7 @@ test('TilePyramid#tileAt', function(t) {
     var result = pyramid.tileAt(new Coordinate(0, 3, 2));
 
     t.deepEqual(result.tile.coord.id, 65);
-    t.deepEqual(result.scale, 724.0773439350247);
+    t.deepEqual(result.scale, 1.4142135623730951);
     t.deepEqual(result.x, 0);
     t.deepEqual(result.y, 4096);
 

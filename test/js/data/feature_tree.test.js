@@ -6,6 +6,7 @@ var fs = require('fs');
 var Protobuf = require('pbf');
 var FeatureTree = require('../../../js/data/feature_tree');
 var path = require('path');
+var CollisionTile = require('../../../js/symbol/collision_tile');
 
 test('featuretree', function(t) {
     var tile = new vt.VectorTile(new Protobuf(new Uint8Array(fs.readFileSync(path.join(__dirname, '/../../fixtures/mbsv5-6-18-23.vector.pbf')))));
@@ -15,12 +16,14 @@ test('featuretree', function(t) {
     function getGeometry(feature) {
         return feature.loadGeometry();
     }
-    var ft = new FeatureTree(getGeometry, getType);
+    var ft = new FeatureTree(getGeometry, getType, new CollisionTile(0, 0));
     var feature = tile.layers.road.feature(0);
     t.ok(feature);
     t.ok(ft, 'can be created');
     ft.insert(feature.bbox(), 'road', feature);
     ft.query({
+        scale: 1,
+        tileSize: 512,
         params: { },
         x: 0,
         y: 0
@@ -39,7 +42,7 @@ test('featuretree with args', function(t) {
     function getGeometry(feature) {
         return feature.loadGeometry();
     }
-    var ft = new FeatureTree(getGeometry, getType);
+    var ft = new FeatureTree(getGeometry, getType, new CollisionTile(0, 0));
     var feature = tile.layers.road.feature(0);
     t.ok(feature);
     t.ok(ft, 'can be created');
@@ -59,7 +62,7 @@ test('featuretree with args', function(t) {
 
 test('featuretree point query', function(t) {
     var tile = new vt.VectorTile(new Protobuf(new Uint8Array(fs.readFileSync(path.join(__dirname, '/../../fixtures/mbsv5-6-18-23.vector.pbf')))));
-    var ft = new FeatureTree({ x: 18, y: 23, z: 6 }, 1);
+    var ft = new FeatureTree({ x: 18, y: 23, z: 6 }, 1, new CollisionTile(0, 0));
 
     for (var i = 0; i < tile.layers.water._features.length; i++) {
         var feature = tile.layers.water.feature(i);
@@ -68,7 +71,8 @@ test('featuretree point query', function(t) {
 
     ft.query({
         source: "mapbox.mapbox-streets-v5",
-        scale: 724.0773439350247,
+        scale: 724.0773439350247 / 512,
+        tileSize: 512,
         params: {
             radius: 30,
             includeGeometry: true
@@ -91,7 +95,7 @@ test('featuretree point query', function(t) {
 
 test('featuretree rect query', function(t) {
     var tile = new vt.VectorTile(new Protobuf(new Uint8Array(fs.readFileSync(path.join(__dirname, '/../../fixtures/mbsv5-6-18-23.vector.pbf')))));
-    var ft = new FeatureTree({ x: 18, y: 23, z: 6 }, 1);
+    var ft = new FeatureTree({ x: 18, y: 23, z: 6 }, 1, new CollisionTile(0, 0));
 
     for (var i = 0; i < tile.layers.water._features.length; i++) {
         var feature = tile.layers.water.feature(i);
@@ -100,7 +104,8 @@ test('featuretree rect query', function(t) {
 
     ft.query({
         source: "mapbox.mapbox-streets-v5",
-        scale: 724.0773439350247,
+        scale: 724.0773439350247 / 512,
+        tileSize: 512,
         params: {
             includeGeometry: true
         },
@@ -140,7 +145,7 @@ test('featuretree query with layerIds', function(t) {
     function getGeometry(feature) {
         return feature.loadGeometry();
     }
-    var ft = new FeatureTree(getGeometry, getType);
+    var ft = new FeatureTree(getGeometry, getType, new CollisionTile(0, 0));
 
     for (var i = 0; i < tile.layers.water._features.length; i++) {
         var feature = tile.layers.water.feature(i);
@@ -149,7 +154,8 @@ test('featuretree query with layerIds', function(t) {
 
     ft.query({
         source: "mapbox.mapbox-streets-v5",
-        scale: 724.0773439350247,
+        scale: 724.0773439350247 / 512,
+        tileSize: 512,
         params: {
             radius: 30,
             layerIds: ['water']
@@ -163,7 +169,8 @@ test('featuretree query with layerIds', function(t) {
 
     ft.query({
         source: "mapbox.mapbox-streets-v5",
-        scale: 724.0773439350247,
+        scale: 724.0773439350247 / 512,
+        tileSize: 512,
         params: {
             radius: 30,
             layerIds: ['none']
