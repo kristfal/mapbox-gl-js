@@ -13,7 +13,7 @@ var normalizeURL = require('../util/mapbox').normalizeStyleURL;
 var browser = require('../util/browser');
 var Dispatcher = require('../util/dispatcher');
 var AnimationLoop = require('./animation_loop');
-var validate = require('mapbox-gl-style-spec/lib/validate/latest');
+var validateStyle = require('./validate_style');
 
 module.exports = Style;
 
@@ -33,6 +33,7 @@ function Style(stylesheet, animationLoop) {
     util.bindAll([
         '_forwardSourceEvent',
         '_forwardTileEvent',
+        '_forwardLayerEvent',
         '_redoPlacement'
     ], this);
 
@@ -42,13 +43,7 @@ function Style(stylesheet, animationLoop) {
             return;
         }
 
-        var valid = validate(stylesheet);
-        if (valid.length) {
-            for (var i = 0; i < valid.length; i++) {
-                this.fire('error', { error: new Error(valid[i].message) });
-            }
-            return;
-        }
+        validateStyle.emitErrors(this, validateStyle(stylesheet));
 
         this._loaded = true;
         this.stylesheet = stylesheet;
@@ -172,7 +167,7 @@ Style.prototype = util.inherit(Evented, {
 
     _broadcastLayers: function() {
         this.dispatcher.broadcast('set layers', this._order.map(function(id) {
-            return this._layers[id].serialize();
+            return this._layers[id].serialize({includeRefProperties: true});
         }, this));
     },
 
@@ -384,6 +379,27 @@ Style.prototype = util.inherit(Evented, {
         return this.getLayer(layer).getPaintProperty(name, klass);
     },
 
+    serialize: function() {
+        return util.filterObject({
+            version: this.stylesheet.version,
+            name: this.stylesheet.name,
+            metadata: this.stylesheet.metadata,
+            center: this.stylesheet.center,
+            zoom: this.stylesheet.zoom,
+            bearing: this.stylesheet.bearing,
+            pitch: this.stylesheet.pitch,
+            sprite: this.stylesheet.sprite,
+            glyphs: this.stylesheet.glyphs,
+            transition: this.stylesheet.transition,
+            sources: util.mapObject(this.sources, function(source) {
+                return source.serialize();
+            }),
+            layers: this._order.map(function(id) {
+                return this._layers[id].serialize();
+            }, this)
+        }, function(value) { return value !== undefined; });
+    },
+
     featuresAt: function(coord, params, callback) {
         this._queryFeatures('featuresAt', coord, params, callback);
     },
@@ -415,7 +431,9 @@ Style.prototype = util.inherit(Evented, {
                     return this._layers[feature.layer] !== undefined;
                 }.bind(this))
                 .map(function(feature) {
-                    feature.layer = this._layers[feature.layer].serialize();
+                    feature.layer = this._layers[feature.layer].serialize({
+                        includeRefProperties: true
+                    });
                     return feature;
                 }.bind(this)));
         }.bind(this));
@@ -447,6 +465,10 @@ Style.prototype = util.inherit(Evented, {
 
     _forwardTileEvent: function(e) {
         this.fire(e.type, util.extend({source: e.target}, e));
+    },
+
+    _forwardLayerEvent: function(e) {
+        this.fire(e.type, util.extend({layer: e.target.id}, e));
     },
 
     // Callbacks from web workers

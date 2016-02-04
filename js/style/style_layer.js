@@ -3,8 +3,10 @@
 var util = require('../util/util');
 var StyleTransition = require('./style_transition');
 var StyleDeclaration = require('./style_declaration');
-var StyleSpecification = require('./reference');
+var styleSpec = require('./style_spec');
+var validateStyle = require('./validate_style');
 var parseColor = require('./parse_color');
+var Evented = require('../util/evented');
 
 module.exports = StyleLayer;
 
@@ -34,8 +36,8 @@ function StyleLayer(layer, refLayer) {
     this.filter = (refLayer || layer).filter;
     this.interactive = (refLayer || layer).interactive;
 
-    this._paintSpecifications = StyleSpecification['paint_' + this.type];
-    this._layoutSpecifications = StyleSpecification['layout_' + this.type];
+    this._paintSpecifications = styleSpec['paint_' + this.type];
+    this._layoutSpecifications = styleSpec['layout_' + this.type];
 
     this._paintTransitions = {}; // {[propertyName]: StyleTransition}
     this._paintTransitionOptions = {}; // {[className]: {[propertyName]: { duration:Number, delay:Number }}}
@@ -63,12 +65,14 @@ function StyleLayer(layer, refLayer) {
     }
 }
 
-StyleLayer.prototype = {
+StyleLayer.prototype = util.inherit(Evented, {
 
     setLayoutProperty: function(name, value) {
+
         if (value == null) {
             delete this._layoutDeclarations[name];
         } else {
+            validateStyle.emitErrors(this, validateStyle.layoutProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
             this._layoutDeclarations[name] = new StyleDeclaration(this._layoutSpecifications[name], value);
         }
     },
@@ -92,6 +96,7 @@ StyleLayer.prototype = {
     },
 
     setPaintProperty: function(name, value, klass) {
+
         if (util.endsWith(name, TRANSITION_SUFFIX)) {
             if (!this._paintTransitionOptions[klass || '']) {
                 this._paintTransitionOptions[klass || ''] = {};
@@ -99,6 +104,7 @@ StyleLayer.prototype = {
             if (value == null) {
                 delete this._paintTransitionOptions[klass || ''][name];
             } else {
+                validateStyle.emitErrors(this, validateStyle.paintProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
                 this._paintTransitionOptions[klass || ''][name] = value;
             }
         } else {
@@ -108,6 +114,7 @@ StyleLayer.prototype = {
             if (value == null) {
                 delete this._paintDeclarations[klass || ''][name];
             } else {
+                validateStyle.emitErrors(this, validateStyle.paintProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
                 this._paintDeclarations[klass || ''][name] = new StyleDeclaration(this._paintSpecifications[name], value);
             }
         }
@@ -197,19 +204,14 @@ StyleLayer.prototype = {
         }
     },
 
-    serialize: function() {
+    serialize: function(options) {
         var output = {
             'id': this.id,
             'ref': this.ref,
             'metadata': this.metadata,
-            'type': this.type,
-            'source': this.source,
-            'source-layer': this.sourceLayer,
             'minzoom': this.minzoom,
             'maxzoom': this.maxzoom,
-            'filter': this.filter,
-            'interactive': this.interactive,
-            'layout': util.mapObject(this._layoutDeclarations, getDeclarationValue)
+            'interactive': this.interactive
         };
 
         for (var klass in this._paintDeclarations) {
@@ -217,9 +219,21 @@ StyleLayer.prototype = {
             output[key] = util.mapObject(this._paintDeclarations[klass], getDeclarationValue);
         }
 
-        return output;
+        if (!this.ref || (options && options.includeRefProperties)) {
+            util.extend(output, {
+                'type': this.type,
+                'source': this.source,
+                'source-layer': this.sourceLayer,
+                'filter': this.filter,
+                'layout': util.mapObject(this._layoutDeclarations, getDeclarationValue)
+            });
+        }
+
+        return util.filterObject(output, function(value, key) {
+            return value !== undefined && !(key === 'layout' && !Object.keys(value).length);
+        });
     }
-};
+});
 
 function getDeclarationValue(declaration) {
     return declaration.value;

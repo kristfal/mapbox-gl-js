@@ -127,6 +127,7 @@ var Map = module.exports = function(options) {
     this.on('style.error', this.onError);
     this.on('source.error', this.onError);
     this.on('tile.error', this.onError);
+    this.on('layer.error', this.onError);
 };
 
 util.extend(Map.prototype, Evented);
@@ -405,6 +406,7 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
                 .off('source.change', this._onSourceUpdate)
                 .off('layer.add', this._forwardLayerEvent)
                 .off('layer.remove', this._forwardLayerEvent)
+                .off('layererrore', this._forwardLayerEvent)
                 .off('tile.add', this._forwardTileEvent)
                 .off('tile.remove', this._forwardTileEvent)
                 .off('tile.load', this._update)
@@ -436,6 +438,7 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
             .on('source.change', this._onSourceUpdate)
             .on('layer.add', this._forwardLayerEvent)
             .on('layer.remove', this._forwardLayerEvent)
+            .on('layer.error', this._forwardLayerEvent)
             .on('tile.add', this._forwardTileEvent)
             .on('tile.remove', this._forwardTileEvent)
             .on('tile.load', this._update)
@@ -446,6 +449,15 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
         this.on('pitch', this.style._redoPlacement);
 
         return this;
+    },
+
+    /**
+     * Get a style object that can be used to recreate the map's style
+     *
+     * @returns {Object} style
+     */
+    getStyle: function() {
+        return this.style.serialize();
     },
 
     /**
@@ -811,7 +823,8 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
     },
 
     /**
-     * A default error handler for `style.error`, `source.error`, and `tile.error` events.
+     * A default error handler for `style.error`, `source.error`, `layer.error`,
+     * and `tile.error` events.
      * It logs the error via `console.error`.
      *
      * @example
@@ -819,6 +832,7 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
      * map.off('style.error', map.onError);
      * map.off('source.error', map.onError);
      * map.off('tile.error', map.onError);
+     * map.off('layer.error', map.onError);
      */
     onError: function(e) {
         console.error(e.error);

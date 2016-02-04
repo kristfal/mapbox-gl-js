@@ -130,8 +130,8 @@ test('Style#_broadcastLayers', function(t) {
     style.on('error', function(error) { t.error(error); });
 
     style.on('load', function() {
-        style.addLayer({id: 'first', source: 'source', type: 'fill' }, 'second');
-        style.addLayer({id: 'third', source: 'source', type: 'fill' });
+        style.addLayer({id: 'first', source: 'source', type: 'fill', 'source-layer': 'source-layer' }, 'second');
+        style.addLayer({id: 'third', source: 'source', type: 'fill', 'source-layer': 'source-layer' });
 
         style.dispatcher.broadcast = function(key, value) {
             t.equal(key, 'set layers');
@@ -244,9 +244,30 @@ test('Style#addSource', function(t) {
         });
     });
 
+    t.test('emits on invalid source', function(t) {
+        var style = new Style(createStyleJSON());
+        style.on('load', function() {
+            style.on('error', function() {
+                t.end();
+            });
+            style.addSource('source-id', {
+                type: 'vector',
+                minzoom: '1', // Shouldn't be a string
+                maxzoom: 10,
+                attribution: 'Mapbox',
+                tiles: ['http://example.com/{z}/{x}/{y}.png']
+            });
+        });
+    });
+
     t.test('sets up source event forwarding', function(t) {
-        var style = new Style(createStyleJSON()),
-            source = createSource();
+        var style = new Style(createStyleJSON({
+            layers: [{
+                id: 'background',
+                type: 'background'
+            }]
+        }));
+        var source = createSource();
 
         function sourceEvent(e) {
             t.equal(e.source, source);
@@ -256,6 +277,10 @@ test('Style#addSource', function(t) {
             t.equal(e.source, source);
         }
 
+        function layerEvent(e) {
+            t.equal(e.layer, 'background');
+        }
+
         style.on('source.load',   sourceEvent);
         style.on('source.error',  sourceEvent);
         style.on('source.change', sourceEvent);
@@ -263,8 +288,11 @@ test('Style#addSource', function(t) {
         style.on('tile.load',     tileEvent);
         style.on('tile.error',    tileEvent);
         style.on('tile.remove',   tileEvent);
+        style.on('layer.error',   layerEvent);
 
         style.on('load', function () {
+            var layer = style._layers.background;
+
             t.plan(7);
             style.addSource('source-id', source); // Fires load
             source.fire('error');
@@ -273,6 +301,7 @@ test('Style#addSource', function(t) {
             source.fire('tile.load');
             source.fire('tile.error');
             source.fire('tile.remove');
+            layer.fire('error');
         });
     });
 });
@@ -420,6 +449,20 @@ test('Style#addLayer', function(t) {
         });
     });
 
+    t.test('emits error on invalid layer', function(t) {
+        var style = new Style(createStyleJSON());
+        style.on('load', function() {
+            style.addLayer({
+                id: 'background',
+                type: 'background',
+                paint: {
+                    'background-opacity': 5
+                }
+            });
+            t.end();
+        });
+    });
+
     t.test('reloads source', function(t) {
         var style = new Style(util.extend(createStyleJSON(), {
             "sources": {
@@ -433,6 +476,7 @@ test('Style#addLayer', function(t) {
             "id": "symbol",
             "type": "symbol",
             "source": "mapbox",
+            "source-layer": "boxmap",
             "filter": ["==", "id", 0]
         };
 
@@ -650,6 +694,28 @@ test('Style#setFilter', function(t) {
             t.end();
         });
     });
+
+    t.test('emits if invalid', function(t) {
+        var style = new Style(createStyleJSON({
+            "sources": {
+                "geojson": {
+                    "type": "geojson",
+                    "data": {}
+                }
+            },
+            "layers": [{
+                "id": "symbol",
+                "type": "symbol",
+                "source": "geojson"
+            }]
+        }));
+        style.on('load', function() {
+            style.on('error', function() {
+                t.end();
+            });
+            style.setFilter('symbol', ['==', '$type', 1]);
+        });
+    });
 });
 
 test('Style#setLayerZoomRange', function(t) {
@@ -846,7 +912,7 @@ test('Style#featuresAt', function(t) {
             t.test('includes paint properties', function(t) {
                 featuresInOrAt({}, function(err, results) {
                     t.error(err);
-                    t.deepEqual(results[0].layer.paint['line-color'], [ 1, 0, 0, 1 ]);
+                    t.deepEqual(results[0].layer.paint['line-color'], 'red');
                     t.end();
                 });
             });
