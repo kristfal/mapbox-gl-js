@@ -720,7 +720,7 @@ util.extend(Map.prototype, /** @lends Map.prototype */{
     loaded: function() {
         if (this._styleDirty || this._sourcesDirty)
             return false;
-        if (this.style && !this.style.loaded())
+        if (!this.style || !this.style.loaded())
             return false;
         return true;
     },
