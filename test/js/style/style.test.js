@@ -248,6 +248,7 @@ test('Style#addSource', function(t) {
         var style = new Style(createStyleJSON());
         style.on('load', function() {
             style.on('error', function() {
+                t.notOk(style.getSource('source-id'));
                 t.end();
             });
             style.addSource('source-id', {
@@ -452,6 +453,10 @@ test('Style#addLayer', function(t) {
     t.test('emits error on invalid layer', function(t) {
         var style = new Style(createStyleJSON());
         style.on('load', function() {
+            style.on('error', function() {
+                t.notOk(style.getLayer('background'));
+                t.end();
+            });
             style.addLayer({
                 id: 'background',
                 type: 'background',
@@ -459,7 +464,6 @@ test('Style#addLayer', function(t) {
                     'background-opacity': 5
                 }
             });
-            t.end();
         });
     });
 
@@ -711,6 +715,7 @@ test('Style#setFilter', function(t) {
         }));
         style.on('load', function() {
             style.on('error', function() {
+                t.notOk(style.getLayer('symbol').serialize().filter);
                 t.end();
             });
             style.setFilter('symbol', ['==', '$type', 1]);

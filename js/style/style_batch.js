@@ -48,11 +48,12 @@ styleBatch.prototype = {
         if (this._style._layers[layer.id] !== undefined) {
             throw new Error('There is already a layer with this ID');
         }
-        validateStyle.emitErrors(this._style, validateStyle.layer({
+
+        if (validateStyle.emitErrors(this._style, validateStyle.layer({
             value: layer,
             style: this._style.serialize(),
             styleSpec: styleSpec
-        }));
+        }))) return this;
 
         if (!(layer instanceof StyleLayer)) {
             var refLayer = layer.ref && this._style.getLayer(layer.ref);
@@ -121,11 +122,11 @@ styleBatch.prototype = {
     },
 
     setFilter: function(layer, filter) {
-        validateStyle.emitErrors(this._style, validateStyle.filter({
+        if (validateStyle.emitErrors(this._style, validateStyle.filter({
             value: filter,
             style: this._style.serialize(),
             styleSpec: styleSpec
-        }));
+        }))) return this;
 
         layer = this._style.getReferentLayer(layer);
         layer.filter = filter;
@@ -166,11 +167,11 @@ styleBatch.prototype = {
         }
 
         if (!Source.is(source)) {
-            validateStyle.emitErrors(this._style, validateStyle.source({
+            if (validateStyle.emitErrors(this._style, validateStyle.source({
                 style: this._style.serialize(),
                 value: source,
                 styleSpec: styleSpec
-            }));
+            }))) return this;
         }
 
         source = Source.create(source);

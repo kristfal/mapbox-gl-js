@@ -7,5 +7,8 @@ module.exports.emitErrors = function throwErrors(emitter, errors) {
         for (var i = 0; i < errors.length; i++) {
             emitter.fire('error', { error: new Error(errors[i].message) });
         }
+        return true;
+    } else {
+        return false;
     }
 };

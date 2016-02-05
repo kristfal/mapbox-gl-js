@@ -43,7 +43,7 @@ function Style(stylesheet, animationLoop) {
             return;
         }
 
-        validateStyle.emitErrors(this, validateStyle(stylesheet));
+        if (validateStyle.emitErrors(this, validateStyle(stylesheet))) return;
 
         this._loaded = true;
         this.stylesheet = stylesheet;

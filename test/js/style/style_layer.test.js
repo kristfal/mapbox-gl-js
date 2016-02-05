@@ -152,6 +152,8 @@ test('StyleLayer#setPaintProperty', function(t) {
         });
 
         layer.on('error', function() {
+            t.equal(layer.getPaintProperty('background-opacity'), undefined);
+            t.equal(layer.getPaintValue('background-opacity'), 1);
             t.end();
         });
 

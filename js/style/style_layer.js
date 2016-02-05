@@ -72,7 +72,12 @@ StyleLayer.prototype = util.inherit(Evented, {
         if (value == null) {
             delete this._layoutDeclarations[name];
         } else {
-            validateStyle.emitErrors(this, validateStyle.layoutProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
+            if (validateStyle.emitErrors(this, validateStyle.layoutProperty({
+                layerType: this.type,
+                objectKey: name,
+                value: value,
+                styleSpec: styleSpec
+            }))) return;
             this._layoutDeclarations[name] = new StyleDeclaration(this._layoutSpecifications[name], value);
         }
     },
@@ -104,7 +109,12 @@ StyleLayer.prototype = util.inherit(Evented, {
             if (value == null) {
                 delete this._paintTransitionOptions[klass || ''][name];
             } else {
-                validateStyle.emitErrors(this, validateStyle.paintProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
+                if (validateStyle.emitErrors(this, validateStyle.paintProperty({
+                    layerType: this.type,
+                    objectKey: name,
+                    value: value,
+                    styleSpec: styleSpec
+                }))) return;
                 this._paintTransitionOptions[klass || ''][name] = value;
             }
         } else {
@@ -114,7 +124,12 @@ StyleLayer.prototype = util.inherit(Evented, {
             if (value == null) {
                 delete this._paintDeclarations[klass || ''][name];
             } else {
-                validateStyle.emitErrors(this, validateStyle.paintProperty({ layerType: this.type, objectKey: name, value: value, styleSpec: styleSpec }));
+                if (validateStyle.emitErrors(this, validateStyle.paintProperty({
+                    layerType: this.type,
+                    objectKey: name,
+                    value: value,
+                    styleSpec: styleSpec
+                }))) return;
                 this._paintDeclarations[klass || ''][name] = new StyleDeclaration(this._paintSpecifications[name], value);
             }
         }
