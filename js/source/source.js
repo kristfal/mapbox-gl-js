@@ -68,7 +68,7 @@ exports._getVisibleCoordinates = function() {
     else return this._pyramid.renderedIDs().map(TileCoord.fromID);
 };
 
-exports._vectorFeaturesAt = function(coord, params, callback) {
+exports._vectorFeaturesAt = function(coord, params, classes, zoom, callback) {
     if (!this._pyramid)
         return callback(null, []);
 
@@ -82,6 +82,8 @@ exports._vectorFeaturesAt = function(coord, params, callback) {
         y: result.y,
         scale: result.scale,
         tileSize: result.tileSize,
+        classes: classes,
+        zoom: zoom,
         source: this.id,
         params: params
     }, callback, result.tile.workerID);

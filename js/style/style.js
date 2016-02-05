@@ -384,15 +384,15 @@ Style.prototype = util.inherit(Evented, {
         return this.getLayer(layer).getPaintProperty(name, klass);
     },
 
-    featuresAt: function(coord, params, callback) {
-        this._queryFeatures('featuresAt', coord, params, callback);
+    featuresAt: function(coord, params, classes, zoom, callback) {
+        this._queryFeatures('featuresAt', coord, params, classes, zoom, callback);
     },
 
-    featuresIn: function(bbox, params, callback) {
-        this._queryFeatures('featuresIn', bbox, params, callback);
+    featuresIn: function(bbox, params, classes, zoom, callback) {
+        this._queryFeatures('featuresIn', bbox, params, classes, zoom, callback);
     },
 
-    _queryFeatures: function(queryType, bboxOrCoords, params, callback) {
+    _queryFeatures: function(queryType, bboxOrCoords, params, classes, zoom, callback) {
         var features = [];
         var error = null;
 
@@ -402,7 +402,7 @@ Style.prototype = util.inherit(Evented, {
 
         util.asyncAll(Object.keys(this.sources), function(id, callback) {
             var source = this.sources[id];
-            source[queryType](bboxOrCoords, params, function(err, result) {
+            source[queryType](bboxOrCoords, params, classes, zoom, function(err, result) {
                 if (result) features = features.concat(result);
                 if (err) error = err;
                 callback();
