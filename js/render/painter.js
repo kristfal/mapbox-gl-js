@@ -299,7 +299,9 @@ Painter.prototype.renderPass = function(options) {
             this.renderLayer(this, source, layer, coords);
         }
 
-        draw.debug(this, coords);
+        if (source) {
+            draw.debug(this, source, coords);
+        }
     }
 };
 

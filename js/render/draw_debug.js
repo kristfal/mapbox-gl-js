@@ -5,20 +5,20 @@ var browser = require('../util/browser');
 
 module.exports = drawDebug;
 
-function drawDebug(painter, coords) {
+function drawDebug(painter, source, coords) {
     if (painter.isOpaquePass) return;
     if (!painter.options.debug) return;
 
     for (var i = 0; i < coords.length; i++) {
-        drawDebugTile(painter, coords[i]);
+        drawDebugTile(painter, source, coords[i]);
     }
 }
 
-function drawDebugTile(painter, coord) {
+function drawDebugTile(painter, source, coord) {
     var gl = painter.gl;
 
     var shader = painter.debugShader;
-    gl.switchShader(shader, painter.calculatePosMatrix(coord));
+    gl.switchShader(shader, painter.calculatePosMatrix(coord, source.maxzoom));
 
     // draw bounding rectangle
     gl.bindBuffer(gl.ARRAY_BUFFER, painter.debugBuffer);
